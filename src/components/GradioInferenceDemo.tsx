@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { SAMPLE_CASES, MODEL_EXPERIMENTS } from '../data/mockData';
 import { SampleCase, ColormapName, ModelId } from '../types';
 import { XrayCanvasViewer } from './XrayCanvasViewer';
+import { InferenceAnalyticsGraph } from './InferenceAnalyticsGraph';
 import { 
   Upload, 
   RotateCcw, 
@@ -1213,6 +1214,20 @@ export const GradioInferenceDemo: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Interactive Diagnostic Graph & Statistical Telemetry */}
+          <InferenceAnalyticsGraph
+            currentModelId={selectedModelId}
+            selectedCase={customImageUrl ? undefined : selectedCase}
+            customImageUrl={customImageUrl}
+            threshold={threshold}
+            opacity={opacity}
+            isCompareMode={isCompareMode}
+            targetClass={targetClass}
+            colormap={colormap}
+            onSelectModel={setSelectedModelId}
+            computeProbabilities={computeModelProbabilities}
+          />
         </div>
       </div>
     </div>

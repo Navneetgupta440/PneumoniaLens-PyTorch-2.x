@@ -7,6 +7,8 @@ export const ModelBenchmarks: React.FC = () => {
   const [sortField, setSortField] = useState<'accuracy' | 'precision' | 'recall' | 'f1' | 'rocAuc'>('f1');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [viewMode, setViewMode] = useState<'both' | 'graph' | 'table'>('both');
+  const [chartMetric, setChartMetric] = useState<'accuracy' | 'f1' | 'precision' | 'recall'>('accuracy');
   const [inspectedModel, setInspectedModel] = useState<ModelExperiment>(
     MODEL_EXPERIMENTS.find(m => m.isChampion) || MODEL_EXPERIMENTS[5]
   );
@@ -69,33 +71,211 @@ export const ModelBenchmarks: React.FC = () => {
 
       {/* Main Benchmark Table Card */}
       <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col gap-4">
-        {/* Table Filter Controls */}
+        {/* Table & Graph Header Controls */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-white">Model Experiment Matrix</h3>
+            <h3 className="text-lg font-bold text-white">Model Experiment Matrix & Performance Graph</h3>
             <p className="text-xs text-slate-400 mt-0.5">
               Comparative analysis across 8 training iterations and multi-model soft-voting ensemble
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-lg border border-slate-800">
-            {categories.map(cat => (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View Mode Switch */}
+            <div className="flex items-center gap-1 p-1 bg-slate-950 rounded-lg border border-slate-800 text-xs font-mono">
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap ${
-                  selectedCategory === cat
-                    ? 'bg-slate-800 text-cyan-400 shadow-sm border border-slate-700'
-                    : 'text-slate-400 hover:text-slate-200'
+                onClick={() => setViewMode('both')}
+                className={`px-2.5 py-1 rounded transition-colors ${
+                  viewMode === 'both' ? 'bg-slate-800 text-cyan-400 font-bold border border-slate-700' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                {cat}
+                Both Views
               </button>
-            ))}
+              <button
+                onClick={() => setViewMode('graph')}
+                className={`px-2.5 py-1 rounded transition-colors ${
+                  viewMode === 'graph' ? 'bg-slate-800 text-cyan-400 font-bold border border-slate-700' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Graph Only
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`px-2.5 py-1 rounded transition-colors ${
+                  viewMode === 'table' ? 'bg-slate-800 text-cyan-400 font-bold border border-slate-700' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Table Only
+              </button>
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-lg border border-slate-800">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap ${
+                    selectedCategory === cat
+                      ? 'bg-slate-800 text-cyan-400 shadow-sm border border-slate-700'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Responsive Table */}
+        {/* Benchmark Performance Graph (shown when viewMode !== 'table') */}
+        {viewMode !== 'table' && (
+          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-cyan-400" />
+                <span className="font-semibold text-slate-200 uppercase font-mono tracking-wider">
+                  Official Test Benchmark Comparison Graph
+                </span>
+              </div>
+
+              {/* Metric filter buttons */}
+              <div className="flex items-center gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs">
+                {(['accuracy', 'f1', 'precision', 'recall'] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setChartMetric(m)}
+                    className={`px-2.5 py-0.5 rounded capitalize transition-all ${
+                      chartMetric === m
+                        ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {m === 'f1' ? 'F1-Score' : m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Horizontal Bar Chart SVG */}
+            <div className="relative w-full overflow-hidden">
+              <svg
+                className="w-full h-auto"
+                viewBox="0 0 700 270"
+                preserveAspectRatio="xMidYMid meet"
+                aria-label="Model Benchmark Comparison Chart"
+              >
+                {/* Horizontal grid lines and percentage markers */}
+                {[60, 70, 80, 90, 100].map((pct) => {
+                  const x = 220 + ((pct - 60) / 40) * 440;
+                  return (
+                    <g key={pct}>
+                      <line x1={x} y1="15" x2={x} y2="235" stroke="#1e293b" strokeDasharray="3,3" />
+                      <text x={x} y="250" fill="#64748b" fontSize="9" fontFamily="monospace" textAnchor="middle">
+                        {pct}%
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Champion highlight baseline line (90.71%) */}
+                <line
+                  x1={220 + ((90.71 - 60) / 40) * 440}
+                  y1="10"
+                  x2={220 + ((90.71 - 60) / 40) * 440}
+                  y2="235"
+                  stroke="#06b6d4"
+                  strokeWidth="1.5"
+                  strokeDasharray="4,2"
+                />
+                <text
+                  x={220 + ((90.71 - 60) / 40) * 440}
+                  y="10"
+                  fill="#06b6d4"
+                  fontSize="8"
+                  fontFamily="monospace"
+                  textAnchor="middle"
+                  fontWeight="bold"
+                >
+                  Champion: 90.71%
+                </text>
+
+                {/* Bars for filtered models */}
+                {filteredModels.map((model, idx) => {
+                  const y = 22 + idx * 26;
+                  const val = model[chartMetric] ?? 0;
+                  const barWidth = Math.max(4, Math.min(440, ((val - 60) / 40) * 440));
+                  const isChampion = model.isChampion;
+                  const isEnsemble = model.id === 'ensemble_soft_voting';
+
+                  return (
+                    <g
+                      key={model.id}
+                      className="cursor-pointer group"
+                      onClick={() => setInspectedModel(model)}
+                    >
+                      {/* Label */}
+                      <text
+                        x="210"
+                        y={y + 13}
+                        fill={isChampion ? '#38bdf8' : isEnsemble ? '#fbbf24' : '#cbd5e1'}
+                        fontSize="9"
+                        fontFamily="monospace"
+                        textAnchor="end"
+                        fontWeight={isChampion ? 'bold' : 'normal'}
+                      >
+                        {model.name.length > 28 ? model.name.slice(0, 26) + '...' : model.name}
+                      </text>
+
+                      {/* Track */}
+                      <rect
+                        x="220"
+                        y={y}
+                        width="440"
+                        height="17"
+                        rx="3"
+                        fill="#0f172a"
+                        stroke="#1e293b"
+                      />
+
+                      {/* Bar fill */}
+                      <rect
+                        x="220"
+                        y={y}
+                        width={barWidth}
+                        height="17"
+                        rx="3"
+                        fill={isChampion ? '#06b6d4' : isEnsemble ? '#f59e0b' : '#3b82f6'}
+                        opacity={isChampion ? 1 : 0.85}
+                        className="transition-all duration-300"
+                      />
+
+                      {/* Value label */}
+                      <text
+                        x={220 + barWidth + 8}
+                        y={y + 12}
+                        fill={isChampion ? '#38bdf8' : isEnsemble ? '#fbbf24' : '#e2e8f0'}
+                        fontSize="9"
+                        fontFamily="monospace"
+                        fontWeight="bold"
+                      >
+                        {val.toFixed(2)}%
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1 border-t border-slate-800">
+              <span>Cyan = ResNet18 Champion (90.71%)</span>
+              <span>Amber = Soft-Voting Ensemble</span>
+              <span>Blue = Intermediate Iterations</span>
+            </div>
+          </div>
+        )}
+
+        {/* Responsive Table (shown when viewMode !== 'graph') */}
+        {viewMode !== 'graph' && (
         <div className="overflow-x-auto rounded-lg border border-slate-800">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950 text-slate-400 uppercase font-mono text-[11px] border-b border-slate-800">
@@ -205,6 +385,7 @@ export const ModelBenchmarks: React.FC = () => {
             </tbody>
           </table>
         </div>
+        )}
 
         {/* Selected Model Deep Dive Drawer */}
         <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 mt-2 flex flex-col gap-3">
