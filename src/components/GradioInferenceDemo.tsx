@@ -3,6 +3,7 @@ import { SAMPLE_CASES, MODEL_EXPERIMENTS } from '../data/mockData';
 import { SampleCase, ColormapName, ModelId } from '../types';
 import { XrayCanvasViewer } from './XrayCanvasViewer';
 import { InferenceAnalyticsGraph } from './InferenceAnalyticsGraph';
+import { BatchInferenceLab } from './BatchInferenceLab';
 import { 
   Upload, 
   RotateCcw, 
@@ -108,6 +109,7 @@ export const GradioInferenceDemo: React.FC = () => {
   const [showColabCommand, setShowColabCommand] = useState<boolean>(false);
   const [isCompareMode, setIsCompareMode] = useState<boolean>(false); // ResNet18 vs Ensemble compare toggle
   const [compareSubMode, setCompareSubMode] = useState<'side_by_side' | 'split_wipe'>('side_by_side'); // Dual viewports vs Split curtain
+  const [inferenceMode, setInferenceMode] = useState<'single' | 'batch'>('single'); // Single image vs Batch processing mode
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -188,23 +190,62 @@ export const GradioInferenceDemo: React.FC = () => {
           </h2>
         </div>
 
+        {/* Inference Mode Switcher (Single Image vs Batch Processing) */}
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800">
+          <button
+            type="button"
+            onClick={() => setInferenceMode('single')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all ${
+              inferenceMode === 'single'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Single X-Ray & Grad-CAM</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setInferenceMode('batch')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all ${
+              inferenceMode === 'batch'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Batch Processing Mode</span>
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                inferenceMode === 'batch'
+                  ? 'bg-slate-950 text-cyan-300'
+                  : 'bg-cyan-950 text-cyan-400 border border-cyan-800/60'
+              }`}
+            >
+              Multi-Upload
+            </span>
+          </button>
+        </div>
+
         <div className="flex flex-wrap items-center gap-3">
-          {/* Side-by-Side Model Comparison Toggle Switch */}
-          <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800">
-            <div className="flex items-center gap-2">
-              <Columns className="w-3.5 h-3.5 text-cyan-400" />
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold text-white">Side-by-Side Comparison</span>
-                <span className="text-[10px] text-slate-400 font-mono">ResNet18 Champion vs Ensemble</span>
+          {/* Side-by-Side Model Comparison Toggle Switch (active in single mode) */}
+          {inferenceMode === 'single' && (
+            <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800">
+              <div className="flex items-center gap-2">
+                <Columns className="w-3.5 h-3.5 text-cyan-400" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-white">Side-by-Side</span>
+                  <span className="text-[10px] text-slate-400 font-mono">ResNet18 vs Ensemble</span>
+                </div>
               </div>
+              <ToggleSwitch
+                checked={isCompareMode}
+                onChange={setIsCompareMode}
+                badge={isCompareMode ? 'ON' : 'OFF'}
+                id="header-side-by-side-toggle"
+              />
             </div>
-            <ToggleSwitch
-              checked={isCompareMode}
-              onChange={setIsCompareMode}
-              badge={isCompareMode ? 'ON' : 'OFF'}
-              id="header-side-by-side-toggle"
-            />
-          </div>
+          )}
 
           <button
             onClick={() => setShowColabCommand(!showColabCommand)}
@@ -223,23 +264,48 @@ export const GradioInferenceDemo: React.FC = () => {
         </div>
       )}
 
-      {/* Main Gradio Studio Container */}
-      <div className={`grid grid-cols-1 ${isCompareMode ? 'lg:grid-cols-12' : 'lg:grid-cols-12'} gap-6 items-start`}>
-        {/* Left Column: Input Selection & Parameters */}
-        <div className={`${isCompareMode ? 'lg:col-span-4' : 'lg:col-span-5'} flex flex-col gap-4`}>
-          {/* Section 1: Select Sample Case or Upload */}
-          <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
-                1. Select Input Chest Radiograph
-              </span>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload Custom</span>
-              </button>
+      {/* Main Container: Batch Processing Mode OR Single Gradio Studio */}
+      {inferenceMode === 'batch' ? (
+        <BatchInferenceLab
+          defaultModelId={selectedModelId}
+          onInspectInSingleView={(c, customUrl) => {
+            if (c) setSelectedCase(c);
+            if (customUrl) setCustomImageUrl(customUrl);
+            else setCustomImageUrl(null);
+            setInferenceMode('single');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      ) : (
+        /* Main Gradio Studio Container */
+        <div className={`grid grid-cols-1 ${isCompareMode ? 'lg:grid-cols-12' : 'lg:grid-cols-12'} gap-6 items-start`}>
+          {/* Left Column: Input Selection & Parameters */}
+          <div className={`${isCompareMode ? 'lg:col-span-4' : 'lg:col-span-5'} flex flex-col gap-4`}>
+            {/* Section 1: Select Sample Case or Upload */}
+            <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                  1. Select Input Chest Radiograph
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setInferenceMode('batch')}
+                    className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-mono font-medium transition-colors"
+                    title="Upload multiple X-rays at once in Batch Mode"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Batch Mode</span>
+                  </button>
+                  <span className="text-slate-700">|</span>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload</span>
+                  </button>
+                </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1230,6 +1296,7 @@ export const GradioInferenceDemo: React.FC = () => {
           />
         </div>
       </div>
+      )}
     </div>
   );
 };
