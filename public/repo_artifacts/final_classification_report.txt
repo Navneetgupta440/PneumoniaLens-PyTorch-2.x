@@ -1,0 +1,10 @@
+Final Model: resnet18_sampler_new_hyperparameters
+
+              precision    recall  f1-score   support
+
+      NORMAL     0.9190    0.8248    0.8694       234
+   PNEUMONIA     0.9010    0.9564    0.9279       390
+
+    accuracy                         0.9071       624
+   macro avg     0.9100    0.8906    0.8986       624
+weighted avg     0.9077    0.9071    0.9059       624

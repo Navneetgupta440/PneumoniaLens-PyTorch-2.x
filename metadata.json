@@ -1,0 +1,6 @@
+{
+  "name": "Pneumonia Detection from Chest X-Rays",
+  "description": "Deep-learning pneumonia classifier with PyTorch transfer learning, Grad-CAM explainability, model benchmark comparison, and Gradio inference laboratory.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

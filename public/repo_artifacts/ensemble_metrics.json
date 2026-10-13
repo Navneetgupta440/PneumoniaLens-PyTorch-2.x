@@ -1,0 +1,8 @@
+{
+    "model": "resnet18_efficientnet_b0_mobilenet_v3_large_ensemble",
+    "accuracy": 0.8942307692307693,
+    "precision": 0.9402173913043478,
+    "recall": 0.8871794871794871,
+    "f1_score": 0.9129287598944591,
+    "roc_auc": 0.964266929651545
+}

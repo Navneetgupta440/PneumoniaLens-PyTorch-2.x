@@ -1,0 +1,19 @@
+{
+    "total_images": 5856,
+    "train_images": 4185,
+    "validation_images": 1047,
+    "test_images": 624,
+    "train_normal": 1079,
+    "train_pneumonia": 3106,
+    "validation_normal": 270,
+    "validation_pneumonia": 777,
+    "test_normal": 234,
+    "test_pneumonia": 390,
+    "grayscale_images": 5573,
+    "rgb_images": 283,
+    "corrupted_images": 0,
+    "min_width": 384,
+    "max_width": 2916,
+    "min_height": 127,
+    "max_height": 2713
+}
